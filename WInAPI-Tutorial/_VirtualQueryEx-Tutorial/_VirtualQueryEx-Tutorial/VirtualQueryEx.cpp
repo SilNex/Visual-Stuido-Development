@@ -5,30 +5,12 @@
 #pragma warning(disable:4996)
 template<typename  T>
 BOOLEAN findValue(DWORD pID, T value);
-BOOLEAN listProcess() {
-	PROCESSENTRY32 pe;					// processentry32 선언
-	pe.dwSize = sizeof(PROCESSENTRY32);	// 크기 입력
-	DWORD pID = GetCurrentProcessId();	// defalut 값 현재 프로세스의 pid 입력
-	DWORD vFind;						// Find to Value를 저장할 변수
-	HANDLE hSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);	//프로세스 스넵샷을 위한 핸들
-	Process32First(hSnapShot, &pe);		//첫번째 스넵샷
-
-	printf("[th32ProcessID]\tszExeFile\tcntThreads\tth32ParentProcessID\n");
-	do {								//모든 프로세스의 스넵샷을 찍어 출력
-		HANDLE proh = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe.th32ProcessID);
-		if (proh != 0) {
-			printf("[%d]%.10S\t%d\t%d\n", pe.th32ProcessID, pe.szExeFile, pe.cntThreads, pe.th32ParentProcessID);
-		}
-		CloseHandle(proh);
-	} while (Process32Next(hSnapShot, &pe));
-	CloseHandle(hSnapShot);				// 스넵샷 핸들 삭제
-	return 1;
-}
-DWORD test = 100;
+BOOLEAN listProcess();
+DWORD test = 100;						// Testing vlaue
 
 int main(void) {
-	DWORD pID = GetCurrentProcessId();	// defalut 값 현재 프로세스의 pid 입력
-	DWORD vFind;						// Find to Value를 저장할 변수
+	DWORD pID = GetCurrentProcessId();	// defalut current process id
+	DWORD vFind;						// Find to Value
 
 	listProcess();
 
@@ -38,34 +20,24 @@ int main(void) {
 	scanf("%d", &vFind);
 
 	findValue(pID, vFind);
+}
 
-	/*h = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);
-	while (VirtualQueryEx(h,(LPVOID)minMem,&mbi,sizeof(mbi)) == sizeof(mbi) ) {
-		if (minMem < (DWORD)si.lpMaximumApplicationAddress \
-			&& (mbi.Protect == PAGE_READONLY || mbi.Protect == PAGE_READWRITE) \
-			&& mbi.State == MEM_COMMIT) {
-			FindData = (char *)malloc(mbi.RegionSize * sizeof(char));			// 페이지 크기만큼 동적 할당
-			if (ReadProcessMemory(h, mbi.BaseAddress, FindData, sizeof(char)*mbi.RegionSize, NULL)) {
-				printf("\n================================Founing================================\n");
-				for (int i = 0; i < mbi.RegionSize; i++) {						// Searching...
-					if (FindData[i] == vFind) {
-						printf("FindData: 0x%p ", (LONGLONG)mbi.BaseAddress+i);
-						count++;
-						if (count % 4 == 0) printf("\n");
-					}
-				}
-			}
-			else{
-				printf("%d\n", GetLastError());
-			}
-			free(FindData);
+BOOLEAN listProcess() {
+	PROCESSENTRY32 pe;					// processentry32 
+	pe.dwSize = sizeof(PROCESSENTRY32);	// input pe dwSize
+	HANDLE hSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, NULL);		// ALL SnapShot of process
+	Process32First(hSnapShot, &pe);
+
+	printf("[th32ProcessID]\tszExeFile\tcntThreads\tth32ParentProcessID\n");
+	do {
+		HANDLE proh = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe.th32ProcessID);	// Open Process
+		if (proh != 0) {
+			printf("[%d]%.10S\t%d\t%d\n", pe.th32ProcessID, pe.szExeFile, pe.cntThreads, pe.th32ParentProcessID);
 		}
-		minMem=(DWORD)mbi.BaseAddress + (DWORD)mbi.RegionSize;
-	}*/
-
-	//printf("%S", FindData);
-	
-	//free(vFind);
+		CloseHandle(proh);
+	} while (Process32Next(hSnapShot, &pe));
+	CloseHandle(hSnapShot);
+	return 1;
 }
 
 template<typename  T>
@@ -79,7 +51,7 @@ BOOLEAN findValue(DWORD pID, T value)
 
 	HANDLE h;
 	long long count = 0;
-	T * FindData = NULL;				// 페이지를 저장할 배열
+	T * FindData = NULL;	// Value for save of Find datas
 
 
 	h = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);
@@ -87,22 +59,21 @@ BOOLEAN findValue(DWORD pID, T value)
 		if (minMem < (DWORD)si.lpMaximumApplicationAddress \
 			&& (mbi.Protect == PAGE_READONLY || mbi.Protect == PAGE_READWRITE \
 				|| mbi.Protect == PAGE_EXECUTE_READWRITE || mbi.Protect == PAGE_EXECUTE_READ ) \
-			&& mbi.State == MEM_COMMIT) 
+			&& mbi.State == MEM_COMMIT)						// Check Address & Permission & State
 		{
-			FindData = (T *)malloc(mbi.RegionSize);			// 페이지 크기만큼 동적 할당
+			FindData = (T *)malloc(mbi.RegionSize);			// Allocat page size
 			if (ReadProcessMemory(h, mbi.BaseAddress, FindData, mbi.RegionSize, NULL)) {
 				//printf("\n================================Founing================================\n");
 				for (int i = 0; i < mbi.RegionSize/sizeof(T); i++) {						// Searching...
 					if (FindData[i] == value && (DWORD*)mbi.BaseAddress + i == &test) {
-						printf("FindData: 0x%p ", (LONGLONG)mbi.BaseAddress + i);
+						printf("FindData: 0x%p \n", (LONGLONG)mbi.BaseAddress + i);
 						count++;
 						if (count % 4 == 0) printf("\n");
 					}
 				}
-			}
-			else {
+			} /* else {
 				printf("%d\n", GetLastError());
-			}
+			} */
 			free(FindData);
 		}
 		minMem = (DWORD)mbi.BaseAddress + (DWORD)mbi.RegionSize;
