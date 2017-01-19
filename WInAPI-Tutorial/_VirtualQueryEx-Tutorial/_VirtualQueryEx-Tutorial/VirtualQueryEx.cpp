@@ -47,7 +47,7 @@ BOOLEAN findValue(DWORD pID, T value)
 	MEMORY_BASIC_INFORMATION mbi;
 	DWORD minMem = 0;
 	GetSystemInfo(&si);
-	minMem = (DWORD)si.lpMinimumApplicationAddress;
+	minMem = (DWORD)si.lpMinimumApplicationAddress;	// set BaseAddress
 
 	HANDLE h;
 	long long count = 0;
