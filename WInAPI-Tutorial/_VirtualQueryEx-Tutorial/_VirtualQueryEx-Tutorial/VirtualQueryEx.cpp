@@ -12,7 +12,7 @@ int main(void) {
 	DWORD pID = GetCurrentProcessId();	// defalut current process id
 	DWORD vFind;						// Find to Value
 
-	listProcess();
+	listProcess(); 
 
 	printf("Insert pID: ");
 	scanf("%d", &pID);
