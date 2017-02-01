@@ -1,26 +1,8 @@
-#include <stdio.h>
 #include <Windows.h>
-#include <Tlhelp32.h>
-#include <malloc.h>
+#include <stdio.h>
+#include <TlHelp32.h>
 #pragma warning(disable:4996)
-template<typename  T>
-BOOLEAN findValue(DWORD pID, T value);
-BOOLEAN listProcess();
-DWORD test = 100;						// Testing vlaue
-
-int main(void) {
-	DWORD pID = GetCurrentProcessId();	// defalut current process id
-	DWORD vFind;						// Find to Value
-
-	listProcess(); 
-
-	printf("Insert pID: ");
-	scanf("%d", &pID);
-	printf("Value to find: ");
-	scanf("%d", &vFind);
-
-	findValue(pID, vFind);
-}
+DWORD test = 100;
 
 BOOLEAN listProcess() {
 	PROCESSENTRY32 pe;					// processentry32 
@@ -45,28 +27,26 @@ BOOLEAN findValue(DWORD pID, T value)
 {
 	SYSTEM_INFO si;
 	MEMORY_BASIC_INFORMATION mbi;
-	LPVOID minMem = 0;
+	DWORD minMem = 0;
 	GetSystemInfo(&si);
-	minMem = si.lpMinimumApplicationAddress;	// set BaseAddress
+	minMem = (DWORD)si.lpMinimumApplicationAddress;	// set BaseAddress
 
 	HANDLE h;
 	long long count = 0;
 	T * FindData = NULL;	// Value for save of Find datas
 
-	//DWORD old;
-	//VirtualProtectEx(hproc, addr, mbi.RegionSize, PAGE_EXECUTE_READWRITE, &old);
-	
+
 	h = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pID);
 	while (VirtualQueryEx(h, (LPVOID)minMem, &mbi, sizeof(mbi)) == sizeof(mbi)) {
-		if (minMem < si.lpMaximumApplicationAddress \
+		if (minMem < (DWORD)si.lpMaximumApplicationAddress \
 			&& (mbi.Protect == PAGE_READONLY || mbi.Protect == PAGE_READWRITE \
-				|| mbi.Protect == PAGE_EXECUTE_READWRITE || mbi.Protect == PAGE_EXECUTE_READ ) \
+				|| mbi.Protect == PAGE_EXECUTE_READWRITE || mbi.Protect == PAGE_EXECUTE_READ) \
 			&& mbi.State == MEM_COMMIT)						// Check Address & Permission & State
 		{
 			FindData = (T *)malloc(mbi.RegionSize);			// Allocat page size
 			if (ReadProcessMemory(h, mbi.BaseAddress, FindData, mbi.RegionSize, NULL)) {
 				//printf("\n================================Founing================================\n");
-				for (int i = 0; i < mbi.RegionSize/sizeof(T); i++) {						// Searching...
+				for (int i = 0; i < mbi.RegionSize / sizeof(T); i++) {						// Searching...
 					if (FindData[i] == value && (DWORD*)mbi.BaseAddress + i == &test) {
 						printf("FindData: 0x%p \n", (LONGLONG)mbi.BaseAddress + i);
 						count++;
@@ -74,14 +54,42 @@ BOOLEAN findValue(DWORD pID, T value)
 					}
 				}
 			} /* else {
-				printf("%d\n", GetLastError());
-			} */
+			  printf("%d\n", GetLastError());
+			  } */
 			free(FindData);
 		}
-		
-		minMem = (LPVOID)((DWORD)mbi.BaseAddress + (DWORD)mbi.RegionSize);
-		//minMem = (LPVOID)((__int3264)mbi.BaseAddress + (__int3264)mbi.RegionSize);	// 64bit 
-		
+		minMem = (DWORD)mbi.BaseAddress + (DWORD)mbi.RegionSize;
 	}
 	return 1;
+}
+
+int main(void) {	
+	listProcess();
+	DWORD pID, value;
+	printf("pID & value");
+	scanf("%d %d", &pID, &value);
+	findValue(pID, value);
+
+	HANDLE h;
+	h = OpenProcess(PROCESS_ALL_ACCESS, FALSE, NULL);
+	SYSTEM_INFO si;
+	MEMORY_BASIC_INFORMATION mbi;
+	DWORD mMem = 0;
+	GetSystemInfo(&si);
+
+	mMem = (DWORD)si.lpMinimumApplicationAddress;
+
+	while (1) {
+		if (VirtualQueryEx(h, (LPCVOID)mMem, &mbi, NULL)==sizeof(mbi)) {
+			if (mMem < (DWORD)si.lpMaximumApplicationAddress \
+				&& (mbi.Protect == PAGE_READWRITE || mbi.Protect == PAGE_EXECUTE_READWRITE) \
+				&& mbi.State == MEM_COMMIT) {
+				// find data에서 정보를 가져와야함
+			}
+		}
+	}
+	
+	//WriteProcessMemory(h, );
+	listProcess();
+
 }
