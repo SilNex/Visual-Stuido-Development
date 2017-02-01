@@ -74,7 +74,9 @@ BOOLEAN findValue(DWORD pID, T value)
 							LPVOID tt = (LPVOID)((LONGLONG)mbi.BaseAddress + i);
 							VirtualProtectEx(h, tt, mbi.RegionSize, PAGE_EXECUTE_READWRITE, &old);
 							// Memory write
-							WriteProcessMemory(h, mbi.BaseAddress, &data, sizeof(data), NULL);
+							printf("%d\n", test);
+							WriteProcessMemory(h, mbi.BaseAddress, &data, sizeof(data), NULL);	// Write memory 
+							printf("%d", test);
 							// Memory write
 							VirtualProtectEx(h, tt, mbi.RegionSize, old, NULL);
 							count++;
